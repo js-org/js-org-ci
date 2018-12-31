@@ -4,7 +4,6 @@ const {promisify} = require("util");
 const execAsync = promisify(exec);
 const getAsync = url => new Promise(resolve => get(url, resolve));
 
-//process.env.TRAVIS_BRANCH = `ci-test`;
 
 const TARGET_BRANCH = "master";
 const TARGET_FILE = "cnames_active.js";
@@ -25,16 +24,14 @@ async function checkCNAME(domain, target) {
     statusCode
   } = await getAsync(target);
 
-  console.assert(
-    statusCode >= 300 && statusCode < 400,
-    `${target} has to redirect using a CNAME file`
-  );
+  if(!(statusCode >= 300 && statusCode < 400))
+    trow `${target} has to redirect using a CNAME file`;
+  
 
   const targetLocation = String(headers.location).replace(/^https/, "http").replace(/\/$/,'');
-  console.assert(
-    targetLocation === domain,
-    `${target} is redirecting to ${targetLocation} instead of ${domain}`
-  );
+  if(!(targetLocation === domain))
+    trow `${target} is redirecting to ${targetLocation} instead of ${domain}`;
+  
 }
 
 const result = (async () => {
@@ -56,10 +53,9 @@ const result = (async () => {
 
   // ... otherwise no other file should be changed
   console.info("Test number of files changed");
-  console.assert(
-    filesChanged.length === 1,
-    `You may change only ${TARGET_FILE}`
-  );
+  if(!(filesChanged.length === 1))
+    trow `You may change only ${TARGET_FILE}`;
+  
 
   // check what was changed in 'cnames_active.js'
   const fileDiffExec = await execAsync(`git diff "${TARGET_BRANCH}" "${TARGET_FILE}"`);
@@ -73,10 +69,9 @@ const result = (async () => {
 
   // only one line should be added (or modified!) in one PR (don't apply any limit when removal gets implemented; we should be happy when people keep the list up-to-date)
   console.info("Test number of changes");
-  console.assert(
-    linesAdded.length <= 1,
-    `You may only add or modify one line per pull request`
-  );
+  if(!(linesAdded.length <= 1))
+    trow `You may only add or modify one line per pull request`;
+  
 
 
   if (linesAdded.length) {
@@ -90,10 +85,9 @@ const result = (async () => {
     console.info("Test alphabetical order");
     linesNew.forEach((line, i) => {
       if (i)
-        console.assert(
-          `${line}`.localeCompare(`${linesNew[i - 1]}`) !== -1,
-          `You should keep the list in alphabetical order`
-        );
+        if(!(`${line}`.localeCompare(`${linesNew[i - 1]}`) !== -1))
+          trow `You should keep the list in alphabetical order`;
+        
     });
 
     // check for a line comment
@@ -104,10 +98,9 @@ const result = (async () => {
 
       // check whether the comment is valid
       console.info("Test comment");
-      console.assert(
-        lineComment[0].match(/\s*\/\/\s*noCF/g),
-        `You are are using a comment that is invalid or no longer supported`
-      );
+      if(!(lineComment[0].match(/\s*\/\/\s*noCF/g)))
+        trow `You are are using a comment that is invalid or no longer supported`;
+      
     }
 
     // try to parse the added line and get back a JS object in case of success 
@@ -115,10 +108,9 @@ const result = (async () => {
 
     // check the result of the parsing attempt
     console.info("Test JSON");
-    console.assert(
-      typeof recordAdded === "object",
-      `Could not parse ${lineAdded}`
-    );
+    if(!(typeof recordAdded === "object"))
+      trow `Could not parse ${lineAdded}`;
+    
 
     // get the key of the record
     const recordKey = Object.keys(recordAdded)[0];
@@ -127,10 +119,9 @@ const result = (async () => {
 
     // check formatting (copy&past from a browser adressbar often results in an URL)
     console.info("Test formatting");
-    console.assert(
-      !recordValue.match(/(http(s?))\:\/\//gi) && !recordValue.endsWith("/"),
-      `The target value should not start with 'http(s)://' and should not end with a '/'`
-    );
+    if(!(!recordValue.match(/(http(s?))\:\/\//gi) && !recordValue.endsWith("/")))
+      trow `The target value should not start with 'http(s)://' and should not end with a '/'`;
+    
 
 
     console.log("Found one additonal record: ", recordAdded);

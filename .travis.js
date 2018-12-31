@@ -25,12 +25,12 @@ async function checkCNAME(domain, target) {
   } = await getAsync(target);
 
   if(!(statusCode >= 300 && statusCode < 400))
-    trow `${target} has to redirect using a CNAME file`;
+    throw `${target} has to redirect using a CNAME file`;
   
 
   const targetLocation = String(headers.location).replace(/^https/, "http").replace(/\/$/,'');
   if(!(targetLocation === domain))
-    trow `${target} is redirecting to ${targetLocation} instead of ${domain}`;
+    throw `${target} is redirecting to ${targetLocation} instead of ${domain}`;
   
 }
 
@@ -52,9 +52,9 @@ const result = (async () => {
   }
 
   // ... otherwise no other file should be changed
-  console.info("Test number of files changed");
+  console.info("TEST: number of files changed");
   if(!(filesChanged.length === 1))
-    trow `You may change only ${TARGET_FILE}`;
+    throw `You may change only ${TARGET_FILE}`;
   
 
   // check what was changed in 'cnames_active.js'
@@ -68,9 +68,9 @@ const result = (async () => {
   const linesAdded = recordLines.filter(line => line.startsWith("+")).map(line => line.substr(1));
 
   // only one line should be added (or modified!) in one PR (don't apply any limit when removal gets implemented; we should be happy when people keep the list up-to-date)
-  console.info("Test number of changes");
+  console.info("TEST: number of changes");
   if(!(linesAdded.length <= 1))
-    trow `You may only add or modify one line per pull request`;
+    throw `You may only add or modify one line per pull request`;
   
 
 
@@ -82,11 +82,11 @@ const result = (async () => {
     const linesNew = recordLines.filter(line => !line.startsWith("-")).map(line => line.substr(1));
 
     // check for alphabetical order
-    console.info("Test alphabetical order");
+    console.info("TEST: alphabetical order");
     linesNew.forEach((line, i) => {
       if (i)
         if(!(`${line}`.localeCompare(`${linesNew[i - 1]}`) !== -1))
-          trow `You should keep the list in alphabetical order`;
+          throw `You should keep the list in alphabetical order`;
         
     });
 
@@ -97,9 +97,9 @@ const result = (async () => {
       lineAdded = lineAdded.substr(0, lineComment.index);
 
       // check whether the comment is valid
-      console.info("Test comment");
-      if(!(lineComment[0].match(/\s*\/\/\s*noCF/g)))
-        trow `You are are using a comment that is invalid or no longer supported`;
+      console.info("TEST: comment");
+      if(!(lineComment[0].match(/\s*\/\/\s*noCF\s*\n/g)))
+        throw `You are are using a comment that is invalid or no longer supported`;
       
     }
 
@@ -107,9 +107,9 @@ const result = (async () => {
     const recordAdded = checkJSON(lineAdded);
 
     // check the result of the parsing attempt
-    console.info("Test JSON");
+    console.info("TEST: JSON");
     if(!(typeof recordAdded === "object"))
-      trow `Could not parse ${lineAdded}`;
+      throw `Could not parse ${lineAdded}`;
     
 
     // get the key of the record
@@ -118,9 +118,9 @@ const result = (async () => {
     const recordValue = recordAdded[recordKey];
 
     // check formatting (copy&past from a browser adressbar often results in an URL)
-    console.info("Test formatting");
+    console.info("TEST: formatting");
     if(!(!recordValue.match(/(http(s?))\:\/\//gi) && !recordValue.endsWith("/")))
-      trow `The target value should not start with 'http(s)://' and should not end with a '/'`;
+      throw `The target value should not start with 'http(s)://' and should not end with a '/'`;
     
 
 
@@ -128,7 +128,7 @@ const result = (async () => {
 
     // check if the target of of the record is a GitHub Page
     if (recordValue.match(/.github\.io/g)) {
-      console.info("Test CNAME");
+      console.info("TEST: CNAME");
       // check the presence of a CNAME
       await checkCNAME(`http://${recordKey}.js.org`, `https://${recordValue}`);
     }

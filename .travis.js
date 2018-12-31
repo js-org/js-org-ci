@@ -98,7 +98,7 @@ const result = (async () => {
 
       // check whether the comment is valid
       console.info("Test comment");
-      if(!(lineComment[0].match(/\s*\/\/\s*noCF/g)))
+      if(!(lineComment[0].match(/\s*\/\/\s*noCF\s*\n/g)))
         trow `You are are using a comment that is invalid or no longer supported`;
       
     }

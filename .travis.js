@@ -6,7 +6,7 @@ const getAsync = url => new Promise(resolve => get(url, resolve));
 
 //process.env.TRAVIS_BRANCH = `ci-test`;
 
-const TARGET_BRANCH = "ci-test";
+const TARGET_BRANCH = "master";
 const TARGET_FILE = "cnames_active.js";
 
 // puts the line into a JSON object, tries to parse and returns a JS object or undefiend

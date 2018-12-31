@@ -96,12 +96,6 @@ const result = (async () => {
         );
     });
 
-    // check for a leading comma (propably a common error; would also show up when JSON parsing gets tried)
-    console.assert(
-      lineAdded.startsWith(","),
-      `You should seperate your record with comma in the beginning`
-    );
-
     // check for a line comment
     const lineComment = /\/\/.*/g.exec(lineAdded);
     if (lineComment) {

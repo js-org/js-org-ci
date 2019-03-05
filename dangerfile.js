@@ -66,11 +66,10 @@ const result = async () => {
   else
     fail(`More than one line added! There's no need to write essays here ;)`)
 
-  console.log(linesOfCode);
 
   // Check diff to see if code is added properly
   let diff = await danger.git.diffForFile(activeFile);
-  let lineAdded = diff.substr(1);
+  let lineAdded = diff.added.substr(1);
 
   // Check for comments
   let lineComment = /\/\/.*/g.exec(lineAdded);
@@ -85,6 +84,7 @@ const result = async () => {
       fail("The `noCF` comment is no longer required, please remove the same.");
   }
 
+
   const recordAdded = checkJSON(lineAdded);
   if(!(typeof recordAdded === "object"))
     fail(`Could not parse ${lineAdded}`);
@@ -95,7 +95,7 @@ const result = async () => {
     const recordValue = recordAdded[recordKey];
 
     // Check if recordKey matches PR title
-    if(prTitleMatch[1] != recordKey)
+    if(prTitleMatch && prTitleMatch[1] != recordKey)
       warn("Hmmm.. your PR title doesn't seem to match your entry in the file.")
 
     // Check formatting (copy&paste from a browser adressbar often results in an URL)
@@ -115,7 +115,7 @@ const result = async () => {
 }
 
 // Exit in case of any error
-result().catch(err => {
+result.catch(err => {
   console.error(`ERROR: ${err.message || err}`);
   console.info("Some CI tests have returned an error.");
   process.exit(1);

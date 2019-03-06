@@ -18,19 +18,6 @@ function getJSON(line) {
   } catch (e) {}
 }
 
-const getKeyValue = (record) => {
-  let recordKey = Object.keys(record)[0];
-  return [recordKey, record[recordKey]];
-}
-
-function stripComments(line) {
-  let lineCommentMatch = /\/\/.*/g.exec(line);
-  if(lineCommentMatch) {
-    line = line.substr(0, lineComment.index);
-  }
-  return [line.replace(/^\+/, '').trim(), lineCommentMatch]
-}
-
 // test wheather a redirect is in place and the target is correct
 async function checkCNAME(domain, target) {
   const {
@@ -65,6 +52,7 @@ const result = async () => {
   else
     fail(`\`${activeFile}\` not modified.`)
 
+
   // Get diff
   let diff = await danger.git.diffForFile(activeFile);
 
@@ -73,7 +61,6 @@ const result = async () => {
     warn("No lines have been added.")
     return;
   }
-
 
   // Check if PR title matches *.js.org
   let prTitleMatch = /^([\d\w]+?)\.js\.org$/.exec(prTitle)
@@ -94,25 +81,28 @@ const result = async () => {
 
 
   // Get added line from diff
-  let lineAdded = diff.added.substr(1), lineComment;
+  let lineAdded = diff.added.substr(1);
 
   // Check for comments
-  [lineAdded, lineComment] = stripComments(lineAdded);
+  let lineComment = /\/\/.*/g.exec(lineAdded);
   if(lineComment) {
     warn(`Comment added to the cname file — \`${lineComment[0]}\``)
+
+    lineAdded = lineAdded.substr(0, lineComment.index).trim();
 
     // Do not allow noCF? comments
     if(!(lineComment[0].match("/\s*\/\/\s*noCF\s*\n/g)")))
       fail("You are using an invalid comment, please remove the same.");
   }
 
-
+  // Try to parse the added line as json
   const recordAdded = getJSON(lineAdded);
   if(!(typeof recordAdded === "object"))
     fail(`Could not parse \`${lineAdded}\``);
   else {
     // get the key and value of the record
-    const [recordKey, recordValue] = getKeyValue(recordAdded);
+    let recordKey = Object.keys(recordAdded)[0];
+    let recordValue = recordAdded[recordKey];
 
     // Check if recordKey matches PR title
     if(prTitleMatch && prTitleMatch[1] != recordKey)
@@ -134,18 +124,22 @@ const result = async () => {
 
     // Check if in alphabetic order
     let diffChunk = await danger.git.structuredDiffForFile(activeFile);
-    diffChunk.chunks.map(chunk => {
-      let diffLines = chunk.changes.map(lineObj => {
-        let lineMatch = /"(.+?)"\s*?:/.exec(lineObj.content)
-        if(lineMatch) return lineMatch[1];
-      }).filter( Boolean );
-      console.log(diffLines);
+    diffChunk.chunks.map(chunk => { // Iterate through each chunk of differences
+      let diffLines = chunk.changes.map(lineObj => { // Iterate through each line
+        let lineMatch = /"(.+?)"\s*?:/.exec(lineObj.content) // get subdomain part
+        if(lineMatch) return lineMatch[1]; // and return if found
+      }).filter( Boolean ); // Remove false values like undefined, null
+      
       diffLines.some((line, i) => {
-        if (i)  // skip the first element
-          if(!(`${line}`.localeCompare(`${diffLines[i - 1]}`) !== -1)) {
+        if (i) { // skip the first element
+          let compareStrings = line.localeCompare(diffLines[i - 1]); // Compare strings
+          if(compareStrings > 1) { // If > 1, it is in alphabetical order
             fail("The list is no longer in alphabetic order.")
             return true;
+          } else if(compareStrings == 0) { // check if duplicate
+            fail(`\'${line}.js.org\` already exists.`)
           }
+        }
       })
     });
   }

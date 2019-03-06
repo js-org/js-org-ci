@@ -91,7 +91,7 @@ const result = async () => {
     lineAdded = lineAdded.substr(0, lineComment.index).trim();
 
     // Do not allow noCF? comments
-    if(!(lineComment[0].match("/\s*\/\/\s*noCF\s*\n/g)")))
+    if(!(lineComment[0].match(/\/\/\s*?noCF\s*?$/)))
       fail("You are using an invalid comment, please remove the same.");
   }
 

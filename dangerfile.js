@@ -65,6 +65,15 @@ const result = async () => {
   else
     fail(`\`${activeFile}\` not modified.`)
 
+  // Get diff
+  let diff = await danger.git.diffForFile(activeFile);
+
+  // If no lines have been added, return
+  if(!diff.added) {
+    warn("No lines have been added.")
+    return;
+  }
+
 
   // Check if PR title matches *.js.org
   let prTitleMatch = /^([\d\w]+?)\.js\.org$/.exec(prTitle)
@@ -84,8 +93,7 @@ const result = async () => {
     fail(`More than one line added!`)
 
 
-  // Check diff to see if code is added properly
-  let diff = await danger.git.diffForFile(activeFile);
+  // Get added line from diff
   let lineAdded = diff.added.substr(1), lineComment;
 
   // Check for comments
@@ -144,7 +152,6 @@ const result = async () => {
 
 // Exit in case of any error
 result().catch(err => {
-  console.error(`ERROR: ${err.message || err}`);
+  console.info(`ERROR: ${err.message || err}`);
   console.info("Some CI tests have returned an error.");
-  process.exit(1);
 });

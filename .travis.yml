@@ -6,4 +6,6 @@ before_install:
   - yarn add danger
 
 script:
-- yarn danger ci
+  - yarn danger ci
+  
+cache: yarn

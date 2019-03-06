@@ -46,7 +46,7 @@ async function checkCNAME(domain, target) {
   
   // Check if the target redirect is correct
   const targetLocation = String(headers.location).replace(/^https/, "http").replace(/\/$/,'');
-  if(!targetLocation) 
+  if(!headers.location) // not redirecting anywhere
     warn(`\`${target}\` is not redirecting to \`${domain}\``)
   else if(targetLocation !== domain)
     warn(`\`${target}\` is redirecting to \`${targetLocation}\` instead of \`${domain}\``);

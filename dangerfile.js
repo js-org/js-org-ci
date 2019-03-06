@@ -50,7 +50,7 @@ const result = async () => {
 
 
   // Check if PR title matches *.js.org
-  let prTitleMatch = /([\d\w]+?)\.js\.org/.exec(prTitle)
+  let prTitleMatch = /^([\d\w]+?)\.js\.org$/.exec(prTitle)
 
   if(prTitleMatch)
     message(`:heavy_check_mark: Title of PR - ${prTitle}`)

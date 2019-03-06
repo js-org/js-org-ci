@@ -25,13 +25,15 @@ async function checkCNAME(domain, target) {
     statusCode
   } = await getAsync(target);
 
-  if(!(statusCode >= 300 && statusCode < 400))
-    warn(`${target} has to redirect using a CNAME file`);
+  if(statusCode == 404)
+    fail(`\`${target}\` responds with a 404 error`)
+  else if(!(statusCode >= 300 && statusCode < 400))
+    warn(`\`${target}\` has to redirect using a CNAME file`);
   
 
   const targetLocation = String(headers.location).replace(/^https/, "http").replace(/\/$/,'');
   if(!(targetLocation === domain))
-    warn(`${target} is redirecting to ${targetLocation} instead of ${domain}`);
+    warn(`\`${target}\` is redirecting to ${targetLocation} instead of ${domain}`);
   
 }
 
@@ -42,11 +44,11 @@ const result = async () => {
 
   if(isCNamesFileModified)
     if(modified.length == 1)
-      message(`:heavy_check_mark: Only file modified is ${activeFile}`)
+      message(`:heavy_check_mark: Only file modified is \`${activeFile}\``)
     else
       warn(`Multiple files modified - ${modified.join(", ")}`)
   else
-    fail(`${activeFile} not modified.`)
+    fail(`\`${activeFile}\` not modified.`)
 
 
   // Check if PR title matches *.js.org
@@ -64,7 +66,7 @@ const result = async () => {
   if(linesOfCode == 1)
     message(`:heavy_check_mark: Only one line added!`)    
   else
-    fail(`More than one line added! There's no need to write essays here ;)`)
+    fail(`More than one line added!`)
 
 
   // Check diff to see if code is added properly
@@ -87,7 +89,7 @@ const result = async () => {
 
   const recordAdded = checkJSON(lineAdded);
   if(!(typeof recordAdded === "object"))
-    fail(`Could not parse ${lineAdded}`);
+    fail(`Could not parse \`${lineAdded}\``);
   else {
     // get the key and value of the record
     const recordKey = Object.keys(recordAdded)[0];

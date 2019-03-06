@@ -138,8 +138,9 @@ const result = async () => {
       let diffLines = chunk.changes.map(lineObj => {
         let lineMatch = /"(.+?)"\s*?:/.exec(lineObj.content)
         if(lineMatch) return lineMatch[1];
-      });
-      diffLines.filter( Boolean ).some((line, i) => {
+      }).filter( Boolean );
+      console.log(diffLines);
+      diffLines.some((line, i) => {
         if (i)  // skip the first element
           if(!(`${line}`.localeCompare(`${diffLines[i - 1]}`) !== -1)) {
             fail("The list is no longer in alphabetic order.")

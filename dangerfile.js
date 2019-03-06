@@ -46,7 +46,9 @@ async function checkCNAME(domain, target) {
   
   // Check if the target redirect is correct
   const targetLocation = String(headers.location).replace(/^https/, "http").replace(/\/$/,'');
-  if(!(targetLocation === domain))
+  if(!targetLocation) 
+    warn(`\`${target}\` is not redirecting to \`${domain}\``)
+  else if(targetLocation !== domain)
     warn(`\`${target}\` is redirecting to \`${targetLocation}\` instead of \`${domain}\``);
 }
 
@@ -124,14 +126,19 @@ const result = async () => {
 
     // Check if in alphabetic order
     let diffChunk = await danger.git.structuredDiffForFile(activeFile);
-    diffChunk.chunks.map(chunk => chunk.changes.map(lineObj => {
-      let lineMatch = /"(.+?)"\s*?:/.exec(lineObj.content)
-      if(lineMatch) return lineMatch[1];
-    }).forEach((line, i) => {
-      if (i)  // skip the first element
-        if(!(`${line}`.localeCompare(`${diffLines[i - 1]}`) !== -1))
-          fail("The list is no longer in alphabetic order.")
-    }));
+    diffChunk.chunks.map(chunk => {
+      let diffLines = chunk.changes.map(lineObj => {
+        let lineMatch = /"(.+?)"\s*?:/.exec(lineObj.content)
+        if(lineMatch) return lineMatch[1];
+      });
+      diffLines.forEach((line, i) => {
+        if (i)  // skip the first element
+          if(!(`${line}`.localeCompare(`${diffLines[i - 1]}`) !== -1)) {
+            fail("The list is no longer in alphabetic order.")
+            break;
+          }
+      })
+    });
   }
 }
 

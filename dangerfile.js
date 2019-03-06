@@ -1,4 +1,4 @@
-import {message, danger, fail} from "danger"
+import {message, danger, fail, markdown} from "danger"
 
 const {get} = require("https");
 const getAsync = url => new Promise(resolve => get(url, resolve));
@@ -137,10 +137,13 @@ const result = async () => {
             fail("The list is no longer in alphabetic order.")
             return true;
           } else if(compareStrings == 0) { // check if duplicate
-            fail(`\'${line}.js.org\` already exists.`)
+            fail(`\`${line}.js.org\` already exists.`)
           }
         }
       })
+
+      markdown(`@${danger.github.pr.user} Hey, thanks for opening this PR! \
+                <br>I've run a set of automated tests, and you can see the results above :)`);
     });
   }
 }

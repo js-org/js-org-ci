@@ -124,15 +124,14 @@ const result = async () => {
 
     // Check if in alphabetic order
     let diffChunk = await danger.git.structuredDiffForFile(activeFile);
-    let diffLines = diffChunk.chunks[0].changes.map(lineObj => {
+    diffChunk.chunks.map(chunk => chunk.changes.map(lineObj => {
       let lineMatch = /"(.+?)"\s*?:/.exec(lineObj.content)
       if(lineMatch) return lineMatch[1];
-    });
-    diffLines.forEach((line, i) => {
+    }).forEach((line, i) => {
       if (i)  // skip the first element
         if(!(`${line}`.localeCompare(`${diffLines[i - 1]}`) !== -1))
           fail("The list is no longer in alphabetic order.")
-    });
+    }));
   }
 }
 

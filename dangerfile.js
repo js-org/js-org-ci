@@ -10,12 +10,25 @@ const newFiles = danger.git.created_files;
 const prTitle = danger.github.pr.title;
 
 // puts the line into a JSON object, tries to parse and returns a JS object or undefined
-function checkJSON(line) {
+function getJSON(line) {
   try {
-    let re = JSON.parse(`{"_":"" ${line}}`);
-    delete re._;
-    return re;
+    let record = JSON.parse(`{"_":"" ${line}}`);
+    delete record._;
+    return record;
   } catch (e) {}
+}
+
+const getKeyValue = (record) => {
+  let recordKey = Object.keys(record)[0];
+  return [recordKey, record[recordKey]];
+}
+
+function stripComments(line) {
+  let lineCommentMatch = /\/\/.*/g.exec(line);
+  if(lineCommentMatch) {
+    line = line.substr(0, lineComment.index);
+  }
+  return [line.replace(/^\+/, '').trim(), lineCommentMatch]
 }
 
 // test wheather a redirect is in place and the target is correct
@@ -25,16 +38,16 @@ async function checkCNAME(domain, target) {
     statusCode
   } = await getAsync(target);
 
+  // Check status codes to see if redirect is done properly
   if(statusCode == 404)
     fail(`\`${target}\` responds with a 404 error`)
   else if(!(statusCode >= 300 && statusCode < 400))
     warn(`\`${target}\` has to redirect using a CNAME file`);
   
-
+  // Check if the target redirect is correct
   const targetLocation = String(headers.location).replace(/^https/, "http").replace(/\/$/,'');
   if(!(targetLocation === domain))
-    warn(`\`${target}\` is redirecting to ${targetLocation} instead of ${domain}`);
-  
+    warn(`\`${target}\` is redirecting to \`${targetLocation}\` instead of \`${domain}\``);
 }
 
 const result = async () => {
@@ -46,7 +59,7 @@ const result = async () => {
     if(modified.length == 1)
       message(`:heavy_check_mark: Only file modified is \`${activeFile}\``)
     else
-      warn(`Multiple files modified - ${modified.join(", ")}`)
+      warn(`Multiple files modified — ${modified.join(", ")}`)
   else
     fail(`\`${activeFile}\` not modified.`)
 
@@ -55,7 +68,7 @@ const result = async () => {
   let prTitleMatch = /^([\d\w]+?)\.js\.org$/.exec(prTitle)
 
   if(prTitleMatch)
-    message(`:heavy_check_mark: Title of PR - ${prTitle}`)
+    message(`:heavy_check_mark: Title of PR — \`${prTitle}\``)
   else
     warn(`Title of Pull Request is not in the format *myawesomeproject.js.org*`)
 
@@ -71,29 +84,25 @@ const result = async () => {
 
   // Check diff to see if code is added properly
   let diff = await danger.git.diffForFile(activeFile);
-  let lineAdded = diff.added.substr(1);
+  let lineAdded = diff.added.substr(1), lineComment;
 
   // Check for comments
-  let lineComment = /\/\/.*/g.exec(lineAdded);
+  [lineAdded, lineComment] = stripComments(lineAdded);
   if(lineComment) {
-    warn(`Comment added to the cname file - \`${lineComment[0]}\``)
+    warn(`Comment added to the cname file — \`${lineComment[0]}\``)
 
-    // Remove the comment from the line in preparation for JSON parsing
-    lineAdded = lineAdded.substr(0, lineComment.index);
-
-    // Do not allow noCF comments
+    // Do not allow noCF? comments
     if(!(lineComment[0].match("/\s*\/\/\s*noCF\s*\n/g)")))
       fail("You are using an invalid comment, please remove the same.");
   }
 
 
-  const recordAdded = checkJSON(lineAdded);
+  const recordAdded = getJSON(lineAdded);
   if(!(typeof recordAdded === "object"))
     fail(`Could not parse \`${lineAdded}\``);
   else {
     // get the key and value of the record
-    const recordKey = Object.keys(recordAdded)[0];
-    const recordValue = recordAdded[recordKey];
+    const [recordKey, recordValue] = getKeyValue(recordAdded);
 
     // Check if recordKey matches PR title
     if(prTitleMatch && prTitleMatch[1] != recordKey)
@@ -103,8 +112,8 @@ const result = async () => {
     if(!(!recordValue.match(/(http(s?))\:\/\//gi) && !recordValue.endsWith("/")))
       fail("The target value should not start with 'http(s)://' and should not end with a '/'");
 
-    
-    if(!diff.added.match(/^\+\s{2},"[\d\w]+?":\s"[\S]+?"$/))
+    // Check for an exact Regex match — this means the format is perfect
+    if(!diff.added.match(/^\+\s{2},"[\da-z]+?":\s"[\S]+?"$/))
       warn("Not an *exact* regex match")
 
     // check if the target of of the record is a GitHub Page
@@ -112,6 +121,18 @@ const result = async () => {
       // check the presence of a CNAME
       await checkCNAME(`http://${recordKey}.js.org`, `https://${recordValue}`);
     }
+
+    // Check if in alphabetic order
+    let diffChunk = await danger.git.structuredDiffForFile(activeFile);
+    let diffLines = diffChunk.chunks[0].changes.map(lineObj => {
+      let lineMatch = /"(.+?)"\s*?:/.exec(lineObj.content)
+      if(lineMatch) return lineMatch[1];
+    });
+    diffLines.forEach((line, i) => {
+      if (i)  // skip the first element
+        if(!(`${line}`.localeCompare(`${diffLines[i - 1]}`) !== -1))
+          fail("The list is no longer in alphabetic order.")
+    });
   }
 }
 

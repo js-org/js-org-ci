@@ -74,14 +74,14 @@ const result = async () => {
   // Check for comments
   let lineComment = /\/\/.*/g.exec(lineAdded);
   if(lineComment) {
-    warn("Please avoid comments in the cname file.")
+    warn(`Comment added to the cname file - \`${lineComment[0]}\``)
 
     // Remove the comment from the line in preparation for JSON parsing
     lineAdded = lineAdded.substr(0, lineComment.index);
 
     // Do not allow noCF comments
-    if(!(lineComment[0].match(/\s*\/\/\s*noCF\s*\n/g)))
-      fail("The `noCF` comment is no longer required, please remove the same.");
+    if(!(lineComment[0].match("/\s*\/\/\s*noCF\s*\n/g)")))
+      fail("You are using an invalid comment, please remove the same.");
   }
 
 
@@ -89,9 +89,8 @@ const result = async () => {
   if(!(typeof recordAdded === "object"))
     fail(`Could not parse ${lineAdded}`);
   else {
-    // get the key of the record
+    // get the key and value of the record
     const recordKey = Object.keys(recordAdded)[0];
-    // get the value of the record
     const recordValue = recordAdded[recordKey];
 
     // Check if recordKey matches PR title

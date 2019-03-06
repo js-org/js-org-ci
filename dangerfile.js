@@ -132,7 +132,7 @@ const result = async () => {
       diffLines.some((line, i) => {
         if (i) { // skip the first element
           let compareStrings = line.localeCompare(diffLines[i - 1]); // Compare strings
-          if(compareStrings > 1) { // If > 1, it is in alphabetical order
+          if(compareStrings > 0) { // If > 0, it is in alphabetical order
             fail("The list is no longer in alphabetic order.");
             return true;
           } else if(compareStrings == 0) { // check if duplicate

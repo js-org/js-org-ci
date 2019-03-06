@@ -141,11 +141,10 @@ const result = async () => {
           }
         }
       })
-
-      markdown(`@${danger.github.pr.user} Hey, thanks for opening this PR! \
-                <br>I've run a set of automated tests, and you can see the results above :)`);
-    });
+    }); 
   }
+  markdown(`@${danger.github.pr.user.login} Hey, thanks for opening this PR! \
+            <br>I've taken the liberty of running a few tests above, you can see the results above :)`);
 }
 
 // Exit in case of any error
